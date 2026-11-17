@@ -39,6 +39,11 @@ def parse_matrix(text: str) -> list[list[int]]:
 
     if not rows:
         raise MatrixError("нет строк матрицы")
+    width = len(rows[0])
+    if any(len(row) != width for row in rows):
+        raise MatrixError("строки разной длины")
+    if len(rows) != width:
+        raise MatrixError(f"матрица не квадратная: {len(rows)}x{width}")
     return rows
     
 def spiral_order(matrix: list[list[int]]) -> list[int]:
