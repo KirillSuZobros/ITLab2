@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 from typing import Final
 
+import httpx
+
+DEFAULT_TIMEOUT: Final[float] = 30.0
 CELL_RE = re.compile(r"-?\d+")
 
 
@@ -57,3 +61,19 @@ def spiral_order(matrix: list[list[int]]) -> list[int]:
                 result.append(matrix[top][col])
             top += 1
     return result
+async def get_matrix(url: str, timeout: float = DEFAULT_TIMEOUT) -> list[int]:
+    """Скачивает квадратную матрицу и возвращает обход по спирали"""
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(url)
+    except httpx.TimeoutException as exc:
+        raise MatrixError(f"таймаут: {exc!r}") from exc
+    except httpx.HTTPError as exc:
+        raise MatrixError(f"сетевая ошибка: {exc!r}") from exc
+
+    if resp.status_code >= 500:
+        raise MatrixError(f"ошибка сервера {resp.status_code}")
+    if resp.status_code >= 400:
+        raise MatrixError(f"ошибка клиента {resp.status_code}")
+
+    return spiral_order(parse_matrix(resp.text))
