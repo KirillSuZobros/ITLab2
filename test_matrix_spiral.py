@@ -124,3 +124,14 @@ async def test_get_matrix_timeout(monkeypatch):
     )
     with pytest.raises(MatrixError, match="таймаут"):
         await get_matrix("http://example.test/matrix.txt")
+
+@pytest.mark.asyncio
+async def test_get_matrix_connect_timeout(monkeypatch):
+    def handler(req):
+        raise httpx.ConnectTimeout("boom", request=req)
+
+    monkeypatch.setattr(
+        matrix_spiral.httpx, "AsyncClient", _patch_client(handler)
+    )
+    with pytest.raises(MatrixError, match="таймаут"):
+        await get_matrix("http://example.test/matrix.txt")
